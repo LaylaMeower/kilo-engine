@@ -31,15 +31,15 @@ data class Hex(val q: Int, val r: Int, val s: Int) {
      * The distance from this hex to another.
      * @author LaylaMeower @ GitHub
      */
-    operator fun rangeTo(other: Hex) = (abs(q - other.q) + abs(r - other.r) + abs(s - other.s)) / 2;
-    fun distanceTo(other: Hex) = rangeTo(other);
+    operator fun rangeTo(other: Hex) = (abs(q - other.q) + abs(r - other.r) + abs(s - other.s)) / 2
+    fun distanceTo(other: Hex) = rangeTo(other)
 
     operator fun unaryPlus() = this
     operator fun unaryMinus() = this * -1
 
     companion object {
         private val directions : Array<Hex> = arrayOf(Hex(1, 0, -1), Hex(1, -1, 0), Hex(0, -1, 1),
-            Hex(-1, 0, 1), Hex(-1, 1, 0), Hex(0, 1, -1));
+            Hex(-1, 0, 1), Hex(-1, 1, 0), Hex(0, 1, -1))
 
         /**
          * @see Direction
@@ -75,7 +75,7 @@ data class Hex(val q: Int, val r: Int, val s: Int) {
 
     override fun equals(other: Any?): Boolean {
         return if (other is Hex) {
-            (q == other.q) && (r == other.r) && (s == other.s);
-        } else false;
+            (q == other.q) && (r == other.r) && (s == other.s)
+        } else false
     }
 }
