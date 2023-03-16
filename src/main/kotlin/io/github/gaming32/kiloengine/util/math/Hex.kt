@@ -44,6 +44,7 @@ data class Hex(val q: Int, val r: Int, val s: Int) {
         /**
          * @see Direction
          */
+        @JvmStatic
         fun direction(direction : Int) = directions[direction % 6]
 
         /**
@@ -56,6 +57,7 @@ data class Hex(val q: Int, val r: Int, val s: Int) {
             fun toHex() = direction(ordinal)
 
             companion object {
+                @JvmStatic
                 fun fromOrdinal(ordinal: Int) = Direction.values()[ordinal % 6]
             }
         }
