@@ -4,8 +4,9 @@ import io.github.gaming32.kiloengine.entity.CameraComponent
 import io.github.gaming32.kiloengine.loader.SceneLoader
 import io.github.gaming32.kiloengine.loader.SceneLoaderImpl
 import io.github.gaming32.kiloengine.util.*
-import org.joml.*
-import org.joml.Math.*
+import org.joml.Vector2d
+import org.joml.Vector2i
+import org.joml.Vector3d
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.glfw.GLFWErrorCallback
@@ -13,13 +14,11 @@ import org.lwjgl.nanovg.NanoVG.*
 import org.lwjgl.nanovg.NanoVGGL2.NVG_ANTIALIAS
 import org.lwjgl.nanovg.NanoVGGL2.nvgCreate
 import org.lwjgl.opengl.GL
-import org.lwjgl.opengl.GL11.*
 import org.lwjgl.opengl.GL13.GL_MULTISAMPLE
 import org.lwjgl.opengl.GL30.*
 import org.ode4j.math.DVector3
 import org.ode4j.ode.DContact.DSurfaceParameters
 import org.ode4j.ode.DContactGeomBuffer
-import org.ode4j.ode.OdeConstants.*
 import org.ode4j.ode.OdeHelper
 import kotlin.math.roundToLong
 
@@ -55,7 +54,7 @@ abstract class KiloEngineGame {
         init()
         registerEvents()
         loadInitScene()
-        val skybox = scene.skybox?.let {
+        val cubemapSkybox = scene.skybox.castOrNull<Skybox.Cubemap>()?.let {
             withValue(-1, TextureManager::maxMipmap, { TextureManager.maxMipmap = it }) {
                 withValue(GL_NEAREST, TextureManager::filter, { TextureManager.filter = it }) {
                     TextureManager.loadAsVirtual(it.down, "skybox/down")
@@ -67,6 +66,10 @@ abstract class KiloEngineGame {
                 }
             }
             sceneLoader.loadObj("/skybox.obj").toDisplayList()
+        }
+        scene.skybox.castOrNull<Skybox.SolidColor>()?.let {
+            glClearColor(it.r, it.g, it.b, 1f)
+            clearParams = GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT
         }
         var lastTime = glfwGetTime()
         var lastPhysicsTime = lastTime
@@ -165,12 +168,12 @@ abstract class KiloEngineGame {
                 glRotatef(camera.rotation.y, 0f, 1f, 0f)
 
                 // Skybox
-                if (skybox != null) {
+                if (cubemapSkybox != null) {
                     glDisable(GL_DEPTH_TEST)
                     glDisable(GL_LIGHTING)
 
                     if (camera.fov != null) {
-                        skybox.draw()
+                        cubemapSkybox.draw()
                     }
 
                     glClear(GL_DEPTH_BUFFER_BIT)
@@ -221,7 +224,7 @@ abstract class KiloEngineGame {
 
             glfwSwapBuffers(window)
         }
-        skybox?.close()
+        cubemapSkybox?.close()
         contactJointGroup.destroy()
         quit()
     }
@@ -330,7 +333,11 @@ abstract class KiloEngineGame {
                     } else {
                         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
                         glLineWidth(10f)
-                        clearParams = GL_DEPTH_BUFFER_BIT
+                        clearParams = GL_DEPTH_BUFFER_BIT or if (scene.skybox is Skybox.SolidColor) {
+                            GL_COLOR_BUFFER_BIT
+                        } else {
+                            0
+                        }
                     }
                 }
             }
