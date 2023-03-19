@@ -1,15 +1,16 @@
 package io.github.gaming32.kiloengine.entity
 
 import com.google.gson.JsonObject
+import io.github.gaming32.kiloengine.KiloEngineGame
+import io.github.gaming32.kiloengine.MatrixStacks
 import io.github.gaming32.kiloengine.MouseMoveEvent
+import io.github.gaming32.kiloengine.TextureManager
 import io.github.gaming32.kiloengine.loader.SceneLoader
 import io.github.gaming32.kiloengine.model.CollisionType
 import io.github.gaming32.kiloengine.model.CollisionTypes
+import io.github.gaming32.kiloengine.model.capsule
 import io.github.gaming32.kiloengine.util.*
-import org.joml.Math
-import org.joml.Vector2f
-import org.joml.Vector2fc
-import org.joml.Vector3d
+import org.joml.*
 import org.lwjgl.glfw.GLFW.glfwGetTime
 import org.lwjgl.nanovg.NanoVG.nvgText
 import org.ode4j.math.DMatrix3
@@ -48,7 +49,23 @@ open class PlayerComponent(
 
     val uiForce = DVector3()
 
-    override fun destroy() = Unit
+    private val _editorModel = lazy {
+        val capsule = entity.getComponentOrNull<CapsuleColliderComponent>() ?: return@lazy null
+        buildDisplayList {
+            TextureManager.withoutMipmaps {
+                texture("/white.png")
+            }
+            color(KiloEngineGame.EDITOR_DEBUG_COLOR)
+            capsule(Vector3f(), capsule.length.toFloat(), capsule.radius.toFloat(), 16)
+        }
+    }
+    private val editorModel by _editorModel
+
+    override fun destroy() {
+        if (_editorModel.isInitialized()) {
+            editorModel?.destroy()
+        }
+    }
 
     fun kill() {
         entity.body.position = startPosition
@@ -132,28 +149,28 @@ open class PlayerComponent(
 
     override fun drawUi(nanovg: Long) {
         nvgText(
-            nanovg, 10f, 55f,
+            nanovg, 10f, 75f,
             "X/Y/Z: " +
                 "${UI_DEC_FORMAT.format(entity.body.position.x)}/" +
                 "${UI_DEC_FORMAT.format(entity.body.position.y)}/" +
                 UI_DEC_FORMAT.format(entity.body.position.z)
         )
         nvgText(
-            nanovg, 10f, 75f,
+            nanovg, 10f, 95f,
             "FX/FY/FZ: " +
                 "${UI_DEC_FORMAT.format(uiForce.x)}/" +
                 "${UI_DEC_FORMAT.format(uiForce.y)}/" +
                 UI_DEC_FORMAT.format(uiForce.z)
         )
         nvgText(
-            nanovg, 10f, 95f,
+            nanovg, 10f, 115f,
             "VX/VY/VZ: " +
                 "${UI_DEC_FORMAT.format(entity.body.linearVel.x)}/" +
                 "${UI_DEC_FORMAT.format(entity.body.linearVel.y)}/" +
                 UI_DEC_FORMAT.format(entity.body.linearVel.z)
         )
         nvgText(
-            nanovg, 10f, 115f,
+            nanovg, 10f, 135f,
             "RY/RX: " +
                 "${UI_DEC_FORMAT.format(rotation.y)}/" +
                 UI_DEC_FORMAT.format(rotation.x)
@@ -168,5 +185,14 @@ open class PlayerComponent(
             -90f, 90f,
             rotation.x + (event.relY * MOUSE_SPEED).toFloat()
         )
+    }
+
+    override fun draw(matrices: MatrixStacks) {
+        if (!KiloEngineGame.EDITOR_MODE) return
+        editorModel?.let {
+            drawPositioned(matrices) {
+                it.draw(matrices)
+            }
+        }
     }
 }
